@@ -29,19 +29,24 @@ class Dog
     end
 
     def save
-        sql = <<-SQL
-            INSERT INTO dogs (name, breed)
-            VALUES (?, ?)
-        SQL
+        #failsafe => prevents creation of duplicate records
+        if self.id
+            self.update
+        else 
+            sql = <<-SQL
+                INSERT INTO dogs (name, breed)
+                VALUES (?, ?)
+            SQL
 
-        # insert the dog
-        DB[:conn].execute(sql, self.name, self.breed)
+            # insert the dog
+            DB[:conn].execute(sql, self.name, self.breed)
 
-        # get the dog ID from the database and save it to the Ruby instance
-        self.id = DB[:conn].execute("SELECT last_insert_rowid() FROM dogs")[0][0]
+            # get the dog ID from the database and save it to the Ruby instance
+            self.id = DB[:conn].execute("SELECT last_insert_rowid() FROM dogs")[0][0]
 
-        # return the Ruby instance
-        self
+            # return the Ruby instance
+            self
+        end
     end
 
     def self.create(name:, breed:)
@@ -91,6 +96,8 @@ class Dog
         first_row_data = DB[:conn].execute(sql, name, breed)[0] 
 
         first_row_data ? self.new_from_db(first_row_data) : self.create(name: name, breed: breed)
+
+        # first_row_data
     end
 
     def update
